@@ -40,7 +40,11 @@ add_definitions(-DBUILD_TIME="${CURRENT_TIME}")
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core WebSockets Network Sql Quick)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core WebSockets Network Sql Quick)
 
-
+if( WIN32 )
+    set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/quill/win/lib/cmake" ${CMAKE_PREFIX_PATH})
+elseif(UNIX)
+    set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/quill/linux/lib/cmake" ${CMAKE_PREFIX_PATH})
+endif()
 
 include_directories( ${CMAKE_SOURCE_DIR} )
 
@@ -56,6 +60,8 @@ include_directories(${LIBMONGOCXX_INCLUDE_DIR})
 include_directories(${LIBBSONCXX_INCLUDE_DIR})
 
 find_package( Wt REQUIRED )
+find_package( quill REQUIRED )
+
 
 
 add_library(MongoCore
@@ -73,9 +79,21 @@ add_library(MongoCore
 target_link_libraries(MongoCore PUBLIC mongo::mongocxx_shared Qt${QT_VERSION_MAJOR}::Core )
 
 
-add_executable(BrowserGame main.cpp)
-target_link_libraries(BrowserGame PUBLIC wt wthttp Wt::Dbo )
+add_executable(BrowserGame main.cpp
+    MainApplication.h MainApplication.cpp
+    MapContainer.h MapContainer.cpp
+    Bootstrap/Bootstrap5ThemeKeys.h Bootstrap/Bootstrap5ThemeKeys.cpp
+    Bootstrap/inlinestyle.h Bootstrap/NavTabs.h
+    Logger.h )
 
+target_link_libraries(BrowserGame PUBLIC wt wthttp Wt::Dbo MongoCore )
+target_link_libraries(BrowserGame PUBLIC quill::quill )
+
+if( WIN32 )
+    target_include_directories(BrowserGame PUBLIC ${CMAKE_SOURCE_DIR}/quill/win/include)
+elseif(UNIX)
+    target_include_directories(BrowserGame PUBLIC ${CMAKE_SOURCE_DIR}/quill/linux/include)
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS BrowserGame
